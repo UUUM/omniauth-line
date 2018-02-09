@@ -5,11 +5,13 @@ module OmniAuth
   module Strategies
     class Line < OmniAuth::Strategies::OAuth2
       option :name, 'line'
+      option :scope, 'profile openid'
 
-      option :client_options, {:site  => 'https://access.line.me',
-                               :authorize_url => '/dialog/oauth/weblogin',
-                               :token_url     => '/v1/oauth/accessToken',
-                               :proxy => ENV['http_proxy'] ? URI(ENV['http_proxy']) : nil}
+      option :client_options, {
+        site: 'https://access.line.me',
+        authorize_url: '/oauth2/v2.1/authorize',
+        token_url: '/oauth2/v2.1/token'
+      }
 
       # host changed
       def callback_phase
@@ -17,7 +19,7 @@ module OmniAuth
         super
       end
 
-      uid { raw_info['mid'] }
+      uid { raw_info['userId'] }
 
       info do
         {
@@ -29,7 +31,7 @@ module OmniAuth
 
       # Require: Access token with PROFILE permission issued.
       def raw_info
-        @raw_info ||= JSON.load(access_token.get('v1/profile').body)
+        @raw_info ||= JSON.load(access_token.get('v2/profile').body)
       rescue ::Errno::ETIMEDOUT
         raise ::Timeout::Error
       end
